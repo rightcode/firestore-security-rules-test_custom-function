@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /students/{studentId}/records/{recordId}{
+      function isLoggedIn(){
+        return request.auth.uid != null;
+      }
+
+      function isUserRole(role){
+        return isLoggedIn()
+                && role in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
+      }
+
+      function isAdmin(){
+        return isUserRole("admin");
+      }
+
+      function isTeacher(){
+        return isUserRole("teacher");
+      }
+
+      function isNotUpdate(key){
+        return request.resource.data[key] == resource.data[key]
+      }
+
+      function isHomeroomTeacher(){
+        return request.auth.uid == resource.data.homeroomTeacher
+      }
+
+      function isEvaluationPeriod(){
+        return get(/databases/$(database)/documents/seasons/$(resource.data.season)).data.evaluationPeriod
+      }
+
+      function isNotUpdateImmutables(){
+        return isNotUpdate("id")
+                && isNotUpdate("studentId")
+                && isNotUpdate("season")
+      }
+
+      function isValidFormat(){
+        return request.resource.data.id is string
+                && request.resource.data.studentId is string
+                && request.resource.data.name is string
+                && request.resource.data.season is string
+                && request.resource.data.homeroomTeacher is string
+                && request.resource.data.record is map
+      }
+
+      allow update: if isAdmin()
+                        && isNotUpdateImmutables()
+                        && isNotUpdate("record")
+                        && isValidFormat();
+
+      allow update: if isTeacher()
+                        && isHomeroomTeacher()
+                        && isNotUpdateImmutables()
+                        && isNotUpdate("name")
+                        && isNotUpdate("homeroomTeacher")
+                        && isEvaluationPeriod()
+                        && isValidFormat();
+    }
+  }
+}
