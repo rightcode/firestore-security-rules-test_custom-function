@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /students/{studentId}/records/{recordId}{
+      function isLoggedIn(){
+        return request.auth.uid != null;
+      }
+
+      function isUserRole(role){
+        return isLoggedIn()
+                && role in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
+      }
+
+      function isAdmin(){
+        return isUserRole("admin");
+      }      
+
+      function isRecordEmpty(_resource){
+        return _resource.data.record == {}
+      }
+
+      function isValidFormat(){
+        return request.resource.data.id is string
+                && request.resource.data.studentId is string
+                && request.resource.data.name is string
+                && request.resource.data.season is string
+                && request.resource.data.homeroomTeacher is string
+                && request.resource.data.record is map
+      }
+
+      allow create: if isAdmin() 
+                        && isRecordEmpty(request.resource)
+                        && isValidFormat();
+    }
+  }
+}
