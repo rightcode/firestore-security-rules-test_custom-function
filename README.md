@@ -1,4 +1,4 @@
-![test](https://github.com/rightcode/firestore-security-rules-test_custom-function/workflows/test/badge.svg)
+![test](https://github.com/rightcode/firestore-security-rules-test_custom-function/workflows/test/badge.svg?branch=master)
 
 ## パッケージインストール
 ```bash
